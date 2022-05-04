@@ -23,6 +23,7 @@ pub struct Player {
     pub amunition: u64,
     pub shooting: bool,
     pub score: f64,
+    pub health: f64,
 }
 
 impl Player {
@@ -35,11 +36,12 @@ impl Player {
             drift_ttl: 0.0,
             direction: Direction::EAST,
             size: PLAYER_SIZE,
-            life: 3,
+            life: 5,
             icon: get_icon(&position),
             amunition: 100,
             shooting: false,
             score: 0.0,
+            health: 1000,
         }
     }
 
@@ -110,6 +112,6 @@ impl GameObject for Player {
         }
 
         restrict_to_bounds(&mut self.pos, [radius, radius, f64::from(size.width), f64::from(size.height)]);
-        //drop(radius);
+        drop(radius);
     }
 }

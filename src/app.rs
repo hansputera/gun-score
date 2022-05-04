@@ -6,11 +6,13 @@ use graphics::{clear, Transformed};
 
 use crate::colors::{Colors};
 use crate::schemas::player::{Player};
+use crate::schemas::text_player::{TextPlayer};
 use crate::schemas::enemy::{Monster};
-use crate::schemas::bullet::{Bullet};
+use crate::schemas::bullet::{Bullet, Attacker};
 use crate::geom::{Direction, Position};
 use crate::schemas::{GameObject};
 use crate::textures::{load_cache, TextDraw, get_heart};
+use crate::util::{get_random_number};
 
 use std::thread;
 use std::time::Duration;
@@ -62,6 +64,7 @@ impl GunScoreApp<'_> {
     pub fn render(&mut self, args: &RenderArgs) {
         let colors = Colors::init();
         let size = &self.get_size();
+        let text_player = TextPlayer::new(&self.player, self.text_draw);
         
         // player
         let (x, y) = (self.player.pos.x, self.player.pos.y);
@@ -69,8 +72,8 @@ impl GunScoreApp<'_> {
 
         // heart icon
         let heart_pos = [
-            f64::from(size.width) / 1.5,
-            f64::from(size.height) / 1.5,
+            f64::from(size.width) / 2.0,
+            (f64::from(size.height) / 2.0) + 20.0,
         ];
 
         let heart_icon = get_heart(&Position::new(
@@ -86,19 +89,24 @@ impl GunScoreApp<'_> {
         self.gl.draw(args.viewport(), |c, gl| {
             clear(colors.white, gl);
 
+            // draw player's name
+            text_player.render(&c, gl);
+            // draw player stats
             self.text_draw.draw(&String::from(format_args!("Amunition: {}", player.amunition).to_string()), &colors.black, &[
                                 20.0, 40.0
-            ], &20, &c, gl);
+            ], &25, &c, gl);
             self.text_draw.draw(&String::from(format_args!("Score: {}", player.score.floor()).to_string()), &colors.black, &[
                                 20.0, 60.0,
-            ], &20, &c, gl);
+            ], &25, &c, gl);
 
+            // draw heart icon
             heart_icon.img.draw(&heart_icon.texture, &c.draw_state, c.transform.trans(heart_pos[0], heart_pos[1]), gl);
             self.text_draw.draw(&String::from(format_args!("{}", player.life).to_string()), &colors.black, &[
                                 heart_pos[0],
                                 heart_pos[1] + 10.0,
             ], &15, &c, gl);
 
+            // draw "Need reload ..." text when the player amunition is 0
             if self.player.amunition <= 0 {
                 self.text_draw.draw(&String::from("Need reload, press (R)"), &colors.red, &[
                                     (f64::from(size.width) / 1.5),
@@ -202,7 +210,7 @@ impl GunScoreApp<'_> {
             self.player.shooting = false;
             if self.player.amunition >= 1 {
                 self.bullets.push(
-                    Bullet::new(self.player.pos.x, self.player.pos.y, self.player.direction),
+                    Bullet::new(self.player.pos.x, self.player.pos.y, self.player.direction, Attacker::Player),
                 );
                 self.player.amunition -= 1;
             }
@@ -211,11 +219,12 @@ impl GunScoreApp<'_> {
         for monster in &mut self.monsters {
             monster.update(args.dt, *size);
             if monster.tabrakan(&self.player) {
-                // TODO: game over
-                if self.player.life <= 0 {
+                self.monsters.retain(|m| m != monster); // remove the monster when hit the player.
+                if self.player.life < 1 {
                     self.status = GameStatus::Lose;
                 } else {
                     self.player.life -= 1;
+                    self.player.pos = Position::new(0.0, 0.0); // reset the position when the player died.
                 }
             }
         }
@@ -224,15 +233,25 @@ impl GunScoreApp<'_> {
             bullet.update(args.dt, *size);
             for monster in &mut self.monsters {
                 if bullet.tabrakan(monster) {
+                    // if the monster type is a fighter, it will shoot a bullet to player.
+                    if monster.enemy_type == EnemyType::Fighter {
+                        self.bullets.push(Bullet::new(monster.pos.x, monster.pos.y, self.player.direction, Attacker::Fighter));
+                    }
+
                     bullet.ttl = 0.0;
                     let health = monster.health;
 
                     monster.health -= f64::from(bullet.damage_count);
-                    if monster.health <= 0.0 {
+                    // if the monster health <= 0.0, and the bullet is coming from Player.
+                    // Add (health - (health / Bullet#damage_count)) as score to player.
+                    if monster.health <= 0.0 && bullet.attacker == Attacker::Player {
                         self.player.score += health - (health - f64::from(bullet.damage_count));
                     }
 
                     drop(health);
+                } else if bullet.tabrakan(self.player) {
+                    bullet.ttl = 0.0;
+                    self.player.health -= f64::from(bullet.damage_count);
                 }
             }
         }

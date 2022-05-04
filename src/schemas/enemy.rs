@@ -39,7 +39,11 @@ impl Enemy {
         };
 
         Enemy {
-            health: get_random_number::<f64>(10.0, 1000.0),
+            health: if enemy_type == EnemyType::Kind {
+                get_random_number::<f64>(10.0, 100.0)
+            } else {
+                get_random_number::<f64>(20.0, 1000.0)
+            },
             move_ttl: MOVE_TTL,
             pos: Position::new(x,y),
             size: ENEMY_RADIUS * 3.0,

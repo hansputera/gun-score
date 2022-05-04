@@ -15,22 +15,30 @@ const BULLET_SPEED: f64 = 2.0;
 const BULLET_SIZE: f64 = 20.0;
 const BULLET_LIFETIME: f64 = 2.0;
 
+#[derive(PartialEq)]
+pub enum Attacker {
+    Monster,
+    Player,
+}
+
 pub struct Bullet {
     pub pos: Position,
     pub direction: Direction,
     pub size: f64,
     pub ttl: f64,
     pub damage_count: f32,
+    pub attacker: Attacker,
 }
 
 impl Bullet {
-    pub fn new(x: f64, y: f64, direction: Direction) -> Self {
+    pub fn new(x: f64, y: f64, direction: Direction, attacker: Attacker) -> Self {
         Bullet {
             pos: Position::new(x,y),
             direction,
             size: BULLET_SIZE,
             ttl: BULLET_LIFETIME,
             damage_count: get_random_number::<f32>(5.0, 20.0),
+            attacker: Attacker,
         }
     }
 

@@ -27,7 +27,7 @@ pub fn get_icon(pos: &Position) -> IconStruct {
 
 pub fn get_heart(pos: &Position) -> IconStruct {
     let image = Image::new()
-        .rect(rectangle::square(pos.x, pos.y, 50.0));
+        .rect(rectangle::square(pos.x, pos.y, 30.0));
     let texture = Texture::from_path(
         Path::new("assets/heart.png"),
         &TextureSettings::new()
