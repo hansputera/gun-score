@@ -2,13 +2,15 @@ use opengl_graphics::{GlGraphics, OpenGL};
 use glutin_window::GlutinWindow as Window;
 use piston::window::{WindowSettings, Size};
 use piston::input::*;
-use graphics::{clear};
+use graphics::{clear, GlyphCache};
 
 use crate::colors::{Colors};
 use crate::schemas::player::{Player};
 use crate::schemas::enemy::{Monster};
 use crate::geom::{Direction};
 use crate::schemas::{GameObject};
+use crate::textures::{load_cache, TextDraw};
+
 
 #[derive(PartialEq)]
 enum GameStatus {
@@ -17,25 +19,34 @@ enum GameStatus {
     Lose, // could be dead
 }
 
-pub struct GunScoreApp {
+pub struct GunScoreApp<'a> {
     pub gl: GlGraphics,
     pub window: Window,
     pub player: Player,
     pub monsters: Vec<Monster>,
     pub status: GameStatus,
+    pub text_draw: TextDraw<'a>,
 }
 
-impl GunScoreApp {
+impl<'a> GunScoreApp<'a> {
     pub fn new() -> Self {
         let opengl = OpenGL::V3_2;
         let window_settings = WindowSettings::new("gun-score", [500, 500])
             .graphics_api(opengl);
+        let mut gl = GlGraphics::new(opengl);
+        let glyph = load_cache(String::from("SF_Atarian_System.ttf"));
+        let text_draw = TextDraw::new(&glyph, &gl);
+
+        drop(opengl);
+        // glyph access on 'TextDraw.cache'
+
         GunScoreApp {
             window: window_settings.build().unwrap(),
-            gl: GlGraphics::new(opengl),
+            gl,
             player: Player::new(&"Tono".to_string(), &0.0, &0.0),
             monsters: Vec::new(),
             status: GameStatus::Fight,
+            text_draw,
         }
     }
 
@@ -51,6 +62,13 @@ impl GunScoreApp {
 
         self.gl.draw(args.viewport(), |c, gl| {
             clear(colors.white, gl);
+
+            // check the game status.
+            match self.status {
+                GameStatus::Lose => {
+
+                }
+            }
 
             // render player
             player.render(&c, gl);
@@ -78,8 +96,7 @@ impl GunScoreApp {
         
         // enemies/monsters update
         if self.monsters.is_empty() {
-            for _ in 1..20 {
-                println!("Summoning monsters..");
+            for _ in 1..10 {
                 self.monsters.push(Monster::new_rand(f64::from(size.width), f64::from(size.height)));
             }
         }
@@ -89,7 +106,7 @@ impl GunScoreApp {
             if monster.tabrakan(&self.player) {
                 // TODO: game over
                 if self.player.life <= 1 {
-                    println!("nyawamu habis!");
+                    self.status = GameStatus::Lose;
                 } else {
                     self.player.life -= 1;
                 }

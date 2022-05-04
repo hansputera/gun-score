@@ -1,6 +1,7 @@
-use rand::{thread_rng, Rng};
+use rand::{thread_rng, Rng, distributions::uniform::SampleUniform};
 
-pub fn get_random_number_float(min: f64, max: f64) -> f64 {
+// now with generic type
+pub fn get_random_number<E: SampleUniform>(min: E, max: E) -> E {
     let mut rng = thread_rng();
     let result = rng.gen_range(min..max);
 
@@ -8,10 +9,3 @@ pub fn get_random_number_float(min: f64, max: f64) -> f64 {
     result
 }
 
-pub fn get_random_number(min: u64, max: u64) -> u64 {
-    let mut rng = thread_rng();
-    let result = rng.gen_range(min..max);
-
-    drop(result);
-    result
-}
