@@ -2,7 +2,7 @@ use opengl_graphics::{GlGraphics, OpenGL};
 use glutin_window::GlutinWindow as Window;
 use piston::window::{WindowSettings, Size};
 use piston::input::*;
-use graphics::{clear, GlyphCache};
+use graphics::{clear};
 
 use crate::colors::{Colors};
 use crate::schemas::player::{Player};

@@ -1,5 +1,5 @@
 use graphics::{Text, Image, rectangle, Context, Transformed, DrawState};
-use opengl_graphics::{GlGraphics, GlyphCache, Texture, TextureSettings};
+use opengl_graphics::{GlGraphics, Texture, GlyphCache, TextureSettings};
 use std::path::Path;
 
 use crate::geom::{Position};
@@ -40,14 +40,9 @@ pub struct TextDraw<'a> {
 impl<'a> TextDraw<'a> {
     pub fn new(cache: &GlyphCache<'a>, gl: &mut GlGraphics) -> Self {
         TextDraw {
-            cache,
-            gl,
+            cache: *cache,
+            gl: *gl,
         }
-    }
-
-    pub fn set_data(&mut self, cache: GlyphCache, gl: &mut GlGraphics) {
-        self.cache = cache;
-        self.gl = gl;
     }
 
     // source: https://github.com/a5huynh/defender-game/blob/master/src/gfx/utils.rs
@@ -57,23 +52,23 @@ impl<'a> TextDraw<'a> {
     // pos = ([0] = x, [1] = y)
     // size = font size
     // ctx = window context
-    pub fn draw(&self, text: String, color: ColorComps, pos: [f64; 2], size: u32, ctx: &Context) {
+    pub fn draw(&self, text: &String, color: &ColorComps, pos: &[f64; 2], size: &u32, ctx: &Context) {
         let transformer = ctx.transform
             .trans(pos[0], pos[1]); // set the text position.
-        Text::new_color(color, size)
-            .draw(text, self.cache, &DrawState::default(), transformer, self.gl)
+        Text::new_color(*color, *size)
+            .draw(&text.to_string(), &mut self.cache, &DrawState::default(), transformer, &mut self.gl)
             .unwrap();
 
         drop(transformer);
     }
 
-    pub fn draw_center(&self, text: String, color: ColorComps, size: u32, bounds: [f64; 2], ctx: &Context) {
+    pub fn draw_center(&self, text: &String, color: &ColorComps, size: &u32, bounds: &[f64; 2], ctx: &Context) {
         let half_size = f64::from(size) / 2.0;
         
         let x = (bounds[0] / 2.0) - ((text.len() as f64) * half_size) / 2.0;
         let y = (bounds[1] / 2.0) - half_size;
 
-        self.draw(color, [x, y], size, ctx);
+        self.draw(text, color, &[x, y], size, ctx);
 
         drop(x);
         drop(y);
