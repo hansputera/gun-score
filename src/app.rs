@@ -35,7 +35,7 @@ impl<'a> GunScoreApp<'a> {
             .graphics_api(opengl);
         let mut gl = GlGraphics::new(opengl);
         let glyph = load_cache(String::from("SF_Atarian_System.ttf"));
-        let text_draw = TextDraw::new(&glyph, &gl);
+        let text_draw = TextDraw::new(&glyph, &mut gl);
 
         drop(opengl);
         // glyph access on 'TextDraw.cache'
