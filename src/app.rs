@@ -101,16 +101,16 @@ impl GunScoreApp<'_> {
                     ], &c,gl);
                 },
                 GameStatus::Win => {
-                    self.text_draw.draw_center(&String::from("You are the Winner!", &colors.green, &40, &[
+                    self.text_draw.draw_center(&String::from("You are the Winner!"), &colors.green, &40, &[
                                                              f64::from(size.width),
                                                              f64::from(size.height),
-                    ], &c, gl));
+                    ], &c, gl);
                 },
                 GameStatus::Fight => {
-                    self.text_draw.draw_center(&String::from("Keep fight!", &colors.black, &32, &[
+                    self.text_draw.draw_center(&String::from("Keep fight!"), &colors.black, &32, &[
                                                              f64::from(size.width),
                                                              f64::from(size.height),
-                    ], &c, gl));
+                    ], &c, gl);
                 }
             }
 
@@ -135,7 +135,7 @@ impl GunScoreApp<'_> {
     }
 
     fn reset(&mut self, state: GameStatus) {
-        self.player = Player::new(&"Tono".to_string(), 0.0, 0.0);
+        self.player = Player::new(&"Tono".to_string(), &0.0, &0.0);
 
         self.status = GameStatus::Fight;
         self.monsters.clear();
