@@ -30,7 +30,7 @@ const MOVE_RADIUS: f64 = 6.0;
 const MOVE_TTL: f64 = 0.1; // 0.1 secs / 100 ms
 const ENEMY_RADIUS: f64 = 10.0;
 
-impl Enemdistributions::uniform::SampleUniformy {
+impl Enemy {
     pub fn new(x: f64, y: f64) -> Self {
         let enemy_type: EnemyType = match get_random_number::<u8>(0, 2) {
             0 => EnemyType::Kind,
