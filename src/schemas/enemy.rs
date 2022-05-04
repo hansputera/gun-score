@@ -17,6 +17,7 @@ pub enum EnemyType {
     Fighter,
 }
 
+#[derive(PartialEq)]
 pub struct Enemy {
     pub health: f64,
     pub pos: Position,

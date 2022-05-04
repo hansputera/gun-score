@@ -7,8 +7,6 @@ pub mod player;
 pub mod enemy;
 pub mod bullet;
 
-pub mod text_player;
-
 pub trait GameObject {
     fn tabrakan(&self, object: &dyn GameObject) -> bool {
         let x = self.position().x - object.position().x;

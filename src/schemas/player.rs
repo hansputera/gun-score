@@ -41,7 +41,7 @@ impl Player {
             amunition: 100,
             shooting: false,
             score: 0.0,
-            health: 1000,
+            health: 1000.0,
         }
     }
 

@@ -6,6 +6,7 @@ pub struct Colors {
     pub green: ColorComps,
     pub red: ColorComps,
     pub black: ColorComps,
+    pub blue: ColorComps,
 }
 
 impl Colors {
@@ -15,6 +16,7 @@ impl Colors {
             green: color::hex("549EA0"),
             red: color::hex("F33333"),
             black: color::hex("000000"),
+            blue: color::hex("2C5489"),
         }
     }
 }

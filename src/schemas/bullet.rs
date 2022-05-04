@@ -38,7 +38,7 @@ impl Bullet {
             size: BULLET_SIZE,
             ttl: BULLET_LIFETIME,
             damage_count: get_random_number::<f32>(5.0, 20.0),
-            attacker: Attacker,
+            attacker,
         }
     }
 
