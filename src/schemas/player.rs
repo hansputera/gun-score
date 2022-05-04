@@ -20,6 +20,10 @@ pub struct Player {
     pub size: f64,
     pub life: u8,
     pub icon: IconStruct,
+    pub amunition: f64,
+    pub shooting: bool,
+    pub reloading: bool,
+    pub score: f64,
 }
 
 impl Player {
@@ -34,6 +38,10 @@ impl Player {
             size: PLAYER_SIZE,
             life: 3,
             icon: get_icon(&position),
+            amunition: 500.0,
+            shooting: false,
+            reloading: false,
+            score: 0.0,
         }
     }
 

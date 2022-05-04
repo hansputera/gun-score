@@ -7,9 +7,12 @@ use graphics::{clear};
 use crate::colors::{Colors};
 use crate::schemas::player::{Player};
 use crate::schemas::enemy::{Monster};
+use crate::schemas::bullet::{Bullet};
 use crate::geom::{Direction};
 use crate::schemas::{GameObject};
 use crate::textures::{load_cache, TextDraw};
+
+use std::{thread, time::Duration};
 
 #[derive(PartialEq)]
 enum GameStatus {
@@ -18,13 +21,22 @@ enum GameStatus {
     Lose, // could be dead
 }
 
+// fire cooldown
+const FIRE_COOLDOWN: f64 = 0.1; // 10 bulls/sec
+// reload time
+const RELOAD_TIME: u64 = 2; // 2 sec
+
 pub struct GunScoreApp<'a> {
     pub gl: GlGraphics,
     pub window: Window,
     pub player: Player,
     pub monsters: Vec<Monster>,
-    status: GameStatus,
+    pub bullets: Vec<Bullet>,
     pub text_draw: TextDraw<'a>,
+
+    // game state
+    status: GameStatus,
+    bullets_cooldown: f64,
 }
 
 impl GunScoreApp<'_> {
@@ -43,6 +55,8 @@ impl GunScoreApp<'_> {
             monsters: Vec::new(),
             status: GameStatus::Fight,
             text_draw: TextDraw::new(glyph),
+            bullets: Vec::new(),
+            bullets_cooldown: 0.0,
         }
     }
 
@@ -56,9 +70,18 @@ impl GunScoreApp<'_> {
 
         // monster/enemy
         let enemies = &self.monsters;
+        // bullets
+        let bullets = &self.bullets;
 
         self.gl.draw(args.viewport(), |c, gl| {
             clear(colors.white, gl);
+
+            if self.player.reloading {
+                self.text_draw.draw(&String::from("Reloading ..."), &colors.black, &[
+                                    (f64::from(size.width) / 1.5),
+                                    (f64::from(size.height) / 1.5)
+                ], &20, &c, gl);
+            }
 
             // check the game status.
             match self.status {
@@ -78,7 +101,13 @@ impl GunScoreApp<'_> {
             for enemy in enemies.iter() {
                 enemy.render(&c, gl);
             }
+
+            // render bullets
+            for bullet in bullets.iter() {
+                bullet.render(&c, gl);
+            }
         });
+
         drop(size);
         drop(colors);
         drop(x);
@@ -103,6 +132,18 @@ impl GunScoreApp<'_> {
             }
         }
 
+        if self.bullets_cooldown > 0.0 {
+            self.bullets_cooldown -= args.dt;
+        }
+
+        if self.player.shooting {
+            self.player.shooting = false;
+            self.bullets.push(
+                Bullet::new(self.player.pos.x, self.player.pos.y, self.player.direction),
+            );
+            self.player.amunition -= 1.0;
+        }
+
         for monster in &mut self.monsters {
             monster.update(args.dt, *size);
             if monster.tabrakan(&self.player) {
@@ -114,6 +155,19 @@ impl GunScoreApp<'_> {
                 }
             }
         }
+
+        for bullet in &mut self.bullets {
+            bullet.update(args.dt, *size);
+            for monster in &mut self.monsters {
+                if bullet.tabrakan(monster) {
+                    bullet.ttl = 0.0;
+                    monster.health -= f64::from(bullet.damage_count);
+                }
+            }
+        }
+
+        self.bullets.retain(|bullet| bullet.ttl > 0.0);
+        self.monsters.retain(|monster| monster.health > 0.0);
         drop(size);
     }
 
@@ -149,6 +203,22 @@ impl GunScoreApp<'_> {
                             self.player.stop_move(Direction::EAST)
                         }
                     },
+                    Key::Space => {
+                        if is_press && self.bullets_cooldown <= 0.0 {
+                            self.bullets_cooldown = FIRE_COOLDOWN;
+                            self.player.shooting = true;
+                        }
+                    },
+                    Key::R => {
+                        if is_press && self.player.amunition <= 0.0 {
+                            self.player.reloading = true;
+                            self.player.shooting = false;
+
+                            thread::sleep(Duration::from_secs(RELOAD_TIME));
+                            self.player.amunition = 500.0;
+                            self.player.reloading = false;
+                        }
+                    }
                     _ => (),
                 }
             }

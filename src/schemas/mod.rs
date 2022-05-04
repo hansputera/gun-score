@@ -5,6 +5,7 @@ use piston::window::Size;
 
 pub mod player;
 pub mod enemy;
+pub mod bullet;
 
 pub trait GameObject {
     fn tabrakan(&self, object: &dyn GameObject) -> bool {
