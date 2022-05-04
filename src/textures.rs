@@ -2,6 +2,8 @@ use graphics::{Text, Image, rectangle, Context, Transformed, DrawState};
 use opengl_graphics::{GlGraphics, Texture, GlyphCache, TextureSettings};
 use std::path::Path;
 
+use rusttype::{Font};
+
 use crate::geom::{Position};
 use crate::colors::{ColorComps};
 
@@ -23,14 +25,18 @@ pub fn get_icon(pos: &Position) -> IconStruct {
     }
 }
 
-pub fn load_cache(font_name: String) -> &'static GlyphCache<'static> {
-    let font = format_args!("assets/{}", font_name.to_string());
-    let cache = GlyphCache::from_font(Path::new(font), (), TextureSettings::new())
-        .expect(format_args!("Unable to load {} font!", font));
+pub fn load_font(font_bytes: &'static [u8]) -> Font<'_> {
+    Font::try_from_bytes(font_bytes).expect("Unable to get font from u8-bytes")
+}
+
+pub fn load_cache(font_bytes: &'static [u8]) -> GlyphCache<'_> {
+    let font = load_font(font_bytes);
+    let cache = GlyphCache::from_font(font, (), TextureSettings::new());
 
     drop(font);
-    cache.as_ref()
+    cache
 }
+
 
 pub struct TextDraw<'a> {
     pub cache: GlyphCache<'a>,
@@ -38,10 +44,10 @@ pub struct TextDraw<'a> {
 }
 
 impl<'a> TextDraw<'a> {
-    pub fn new(cache: &GlyphCache<'a>, gl: &mut GlGraphics) -> Self {
+    pub fn new(cache: GlyphCache<'a>, gl: GlGraphics) -> Self {
         TextDraw {
-            cache: *cache,
-            gl: *gl,
+            cache: cache,
+            gl: gl,
         }
     }
 
@@ -52,7 +58,7 @@ impl<'a> TextDraw<'a> {
     // pos = ([0] = x, [1] = y)
     // size = font size
     // ctx = window context
-    pub fn draw(&self, text: &String, color: &ColorComps, pos: &[f64; 2], size: &u32, ctx: &Context) {
+    pub fn draw(&mut self, text: &String, color: &ColorComps, pos: &[f64; 2], size: &u32, ctx: &Context) {
         let transformer = ctx.transform
             .trans(pos[0], pos[1]); // set the text position.
         Text::new_color(*color, *size)
@@ -62,8 +68,8 @@ impl<'a> TextDraw<'a> {
         drop(transformer);
     }
 
-    pub fn draw_center(&self, text: &String, color: &ColorComps, size: &u32, bounds: &[f64; 2], ctx: &Context) {
-        let half_size = f64::from(size) / 2.0;
+    pub fn draw_center(&mut self, text: &String, color: &ColorComps, size: &u32, bounds: &[f64; 2], ctx: &Context) {
+        let half_size = f64::from(*size) / 2.0;
         
         let x = (bounds[0] / 2.0) - ((text.len() as f64) * half_size) / 2.0;
         let y = (bounds[1] / 2.0) - half_size;

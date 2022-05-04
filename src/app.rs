@@ -11,7 +11,6 @@ use crate::geom::{Direction};
 use crate::schemas::{GameObject};
 use crate::textures::{load_cache, TextDraw};
 
-
 #[derive(PartialEq)]
 enum GameStatus {
     Fight, // fighting mode
@@ -28,14 +27,14 @@ pub struct GunScoreApp<'a> {
     pub text_draw: TextDraw<'a>,
 }
 
-impl<'a> GunScoreApp<'a> {
+impl GunScoreApp<'_> {
     pub fn new() -> Self {
         let opengl = OpenGL::V3_2;
         let window_settings = WindowSettings::new("gun-score", [500, 500])
             .graphics_api(opengl);
-        let mut gl = GlGraphics::new(opengl);
-        let glyph = load_cache(String::from("SF_Atarian_System.ttf"));
-        let text_draw = TextDraw::new(&glyph, &mut gl);
+        let gl = GlGraphics::new(opengl);
+        let glyph = load_cache(include_bytes!("../assets/SF_Atarian_System.ttf"));
+        let text_draw = TextDraw::new(glyph, gl);
 
         drop(opengl);
         // glyph access on 'TextDraw.cache'
