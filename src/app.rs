@@ -62,7 +62,7 @@ impl GunScoreApp<'_> {
         
         // player
         let (x, y) = (self.player.pos.x, self.player.pos.y);
-        let player = &mut self.player;
+        let player = &self.player;
 
         // monster/enemy
         let enemies = &self.monsters;
@@ -95,14 +95,23 @@ impl GunScoreApp<'_> {
             // check the game status.
             match self.status {
                 GameStatus::Lose => {
-                    self.text_draw.draw_center(&String::from("YOU LOSE!"), &colors.red, &32, &[
+                    self.text_draw.draw_center(&String::from("YOU LOSE!"), &colors.red, &40, &[
                                                f64::from(size.width),
                                                f64::from(size.height),
                     ], &c,gl);
-
-                    player.amunition = 0.0;
                 },
-                _ => (),
+                GameStatus::Win => {
+                    self.text_draw.draw_center(&String::from("You are the Winner!", &colors.green, &40, &[
+                                                             f64::from(size.width),
+                                                             f64::from(size.height),
+                    ], &c, gl));
+                },
+                GameStatus::Fight => {
+                    self.text_draw.draw_center(&String::from("Keep fight!", &colors.black, &32, &[
+                                                             f64::from(size.width),
+                                                             f64::from(size.height),
+                    ], &c, gl));
+                }
             }
 
             // render player
