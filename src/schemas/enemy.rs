@@ -26,7 +26,7 @@ pub struct Enemy {
     pub damage_count: f32,
 }
 
-const MOVE_RADIUS: f64 = 6.0;
+const MOVE_RADIUS: f64 = 10.0;
 const MOVE_TTL: f64 = 0.1; // 0.1 secs / 100 ms
 const ENEMY_RADIUS: f64 = 10.0;
 

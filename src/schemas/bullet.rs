@@ -30,7 +30,7 @@ impl Bullet {
             direction,
             size: BULLET_SIZE,
             ttl: BULLET_LIFETIME,
-            damage_count: get_random_number::<f32>(1.0, 10.0),
+            damage_count: get_random_number::<f32>(5.0, 20.0),
         }
     }
 
@@ -65,8 +65,8 @@ impl GameObject for Bullet {
         match self.direction {
             Direction::EAST => self.pos.x += BULLET_SPEED,
             Direction::NORTH => self.pos.y -= BULLET_SPEED,
-            Direction::WEST => self.pos.x += BULLET_SPEED,
-            Direction::SOUTH => self.pos.y -= BULLET_SPEED,
+            Direction::WEST => self.pos.x -= BULLET_SPEED,
+            Direction::SOUTH => self.pos.y += BULLET_SPEED,
         }
     }
 }

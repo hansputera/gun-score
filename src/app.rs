@@ -12,8 +12,6 @@ use crate::geom::{Direction};
 use crate::schemas::{GameObject};
 use crate::textures::{load_cache, TextDraw};
 
-use std::{thread, time::Duration};
-
 #[derive(PartialEq)]
 enum GameStatus {
     Fight, // fighting mode
@@ -23,8 +21,6 @@ enum GameStatus {
 
 // fire cooldown
 const FIRE_COOLDOWN: f64 = 0.1; // 10 bulls/sec
-// reload time
-const RELOAD_TIME: u64 = 2; // 2 sec
 
 pub struct GunScoreApp<'a> {
     pub gl: GlGraphics,
@@ -66,7 +62,7 @@ impl GunScoreApp<'_> {
         
         // player
         let (x, y) = (self.player.pos.x, self.player.pos.y);
-        let player = &self.player;
+        let player = &mut self.player;
 
         // monster/enemy
         let enemies = &self.monsters;
@@ -76,6 +72,19 @@ impl GunScoreApp<'_> {
         self.gl.draw(args.viewport(), |c, gl| {
             clear(colors.white, gl);
 
+            self.text_draw.draw(&String::from(format_args!("Amunition: {}", player.amunition).to_string()), &colors.black, &[
+                                20.0, 40.0
+            ], &20, &c, gl);
+            self.text_draw.draw(&String::from(format_args!("Score: {}", player.score).to_string()), &colors.black, &[
+                                20.0, 60.0,
+            ], &20, &c, gl);
+
+            if self.player.amunition <= 0.0 {
+                self.text_draw.draw(&String::from("Need reload, press (R)"), &colors.red, &[
+                                    (f64::from(size.width) / 1.5),
+                                    (f64::from(size.height) / 1.5)
+                ], &20, &c, gl);
+            }
             if self.player.reloading {
                 self.text_draw.draw(&String::from("Reloading ..."), &colors.black, &[
                                     (f64::from(size.width) / 1.5),
@@ -90,6 +99,8 @@ impl GunScoreApp<'_> {
                                                f64::from(size.width),
                                                f64::from(size.height),
                     ], &c,gl);
+
+                    player.amunition = 0.0;
                 },
                 _ => (),
             }
@@ -112,6 +123,14 @@ impl GunScoreApp<'_> {
         drop(colors);
         drop(x);
         drop(y);
+    }
+
+    fn reset(&mut self, state: GameStatus) {
+        self.player = Player::new(&"Tono".to_string(), 0.0, 0.0);
+
+        self.status = GameStatus::Fight;
+        self.monsters.clear();
+        self.bullets.clear();
     }
 
     fn get_size(&self) -> Size {
@@ -138,10 +157,12 @@ impl GunScoreApp<'_> {
 
         if self.player.shooting {
             self.player.shooting = false;
-            self.bullets.push(
-                Bullet::new(self.player.pos.x, self.player.pos.y, self.player.direction),
-            );
-            self.player.amunition -= 1.0;
+            if self.player.amunition >= 1.0 {
+                self.bullets.push(
+                    Bullet::new(self.player.pos.x, self.player.pos.y, self.player.direction),
+                );
+                self.player.amunition -= 1.0;
+            }
         }
 
         for monster in &mut self.monsters {
@@ -214,8 +235,9 @@ impl GunScoreApp<'_> {
                             self.player.reloading = true;
                             self.player.shooting = false;
 
-                            thread::sleep(Duration::from_secs(RELOAD_TIME));
-                            self.player.amunition = 500.0;
+                            for x in 1..10 { // reload effect w/ loop ehe:)
+                                self.player.amunition += f64::from(x);
+                            }
                             self.player.reloading = false;
                         }
                     }

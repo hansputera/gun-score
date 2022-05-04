@@ -38,7 +38,7 @@ impl Player {
             size: PLAYER_SIZE,
             life: 3,
             icon: get_icon(&position),
-            amunition: 500.0,
+            amunition: 100.0,
             shooting: false,
             reloading: false,
             score: 0.0,
