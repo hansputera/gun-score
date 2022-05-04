@@ -25,6 +25,20 @@ pub fn get_icon(pos: &Position) -> IconStruct {
     }
 }
 
+pub fn get_heart(pos: &Position) -> IconStruct {
+    let image = Image::new()
+        .rect(rectangle::square(pos.x, pos.y, 50.0));
+    let texture = Texture::from_path(
+        Path::new("assets/heart.png"),
+        &TextureSettings::new()
+    ).unwrap();
+
+    IconStruct {
+        img: image,
+        texture,
+    }
+}
+
 pub fn load_font(font_bytes: &'static [u8]) -> Font<'_> {
     Font::try_from_bytes(font_bytes).expect("Unable to get font from u8-bytes")
 }

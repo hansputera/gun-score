@@ -2,15 +2,18 @@ use opengl_graphics::{GlGraphics, OpenGL};
 use glutin_window::GlutinWindow as Window;
 use piston::window::{WindowSettings, Size};
 use piston::input::*;
-use graphics::{clear};
+use graphics::{clear, Transformed};
 
 use crate::colors::{Colors};
 use crate::schemas::player::{Player};
 use crate::schemas::enemy::{Monster};
 use crate::schemas::bullet::{Bullet};
-use crate::geom::{Direction};
+use crate::geom::{Direction, Position};
 use crate::schemas::{GameObject};
-use crate::textures::{load_cache, TextDraw};
+use crate::textures::{load_cache, TextDraw, get_heart};
+
+use std::thread;
+use std::time::Duration;
 
 #[derive(PartialEq)]
 enum GameStatus {
@@ -64,6 +67,17 @@ impl GunScoreApp<'_> {
         let (x, y) = (self.player.pos.x, self.player.pos.y);
         let player = &self.player;
 
+        // heart icon
+        let heart_pos = [
+            f64::from(size.width) / 1.5,
+            f64::from(size.height) / 1.5,
+        ];
+
+        let heart_icon = get_heart(&Position::new(
+                heart_pos[0],
+                heart_pos[1],
+        ));
+
         // monster/enemy
         let enemies = &self.monsters;
         // bullets
@@ -75,18 +89,18 @@ impl GunScoreApp<'_> {
             self.text_draw.draw(&String::from(format_args!("Amunition: {}", player.amunition).to_string()), &colors.black, &[
                                 20.0, 40.0
             ], &20, &c, gl);
-            self.text_draw.draw(&String::from(format_args!("Score: {}", player.score).to_string()), &colors.black, &[
+            self.text_draw.draw(&String::from(format_args!("Score: {}", player.score.floor()).to_string()), &colors.black, &[
                                 20.0, 60.0,
             ], &20, &c, gl);
 
-            if self.player.amunition <= 0.0 {
+            heart_icon.img.draw(&heart_icon.texture, &c.draw_state, c.transform.trans(heart_pos[0], heart_pos[1]), gl);
+            self.text_draw.draw(&String::from(format_args!("{}", player.life).to_string()), &colors.black, &[
+                                heart_pos[0],
+                                heart_pos[1] + 10.0,
+            ], &15, &c, gl);
+
+            if self.player.amunition <= 0 {
                 self.text_draw.draw(&String::from("Need reload, press (R)"), &colors.red, &[
-                                    (f64::from(size.width) / 1.5),
-                                    (f64::from(size.height) / 1.5)
-                ], &20, &c, gl);
-            }
-            if self.player.reloading {
-                self.text_draw.draw(&String::from("Reloading ..."), &colors.black, &[
                                     (f64::from(size.width) / 1.5),
                                     (f64::from(size.height) / 1.5)
                 ], &20, &c, gl);
@@ -105,6 +119,13 @@ impl GunScoreApp<'_> {
                                                              f64::from(size.width),
                                                              f64::from(size.height),
                     ], &c, gl);
+
+                    thread::sleep(Duration::from_secs(2));
+                    self.text_draw.draw_center(&String::from("Resetting ..."), &colors.black, &40, &[
+                                               f64::from(size.width),
+                                               f64::from(size.height),
+                    ], &c, gl);
+                    thread::sleep(Duration::from_secs(2));
                 },
                 GameStatus::Fight => {
                     self.text_draw.draw_center(&String::from("Keep fight!"), &colors.black, &32, &[
@@ -128,13 +149,26 @@ impl GunScoreApp<'_> {
             }
         });
 
+        match self.status {
+            GameStatus::Win => {
+                thread::sleep(Duration::from_secs(2));
+                self.reset();
+            },
+            GameStatus::Lose => {
+                self.reset();
+            },
+            _ => (),
+        }
+
+        drop(heart_icon);
+        drop(heart_pos);
         drop(size);
         drop(colors);
         drop(x);
         drop(y);
     }
 
-    fn reset(&mut self, state: GameStatus) {
+    fn reset(&mut self) {
         self.player = Player::new(&"Tono".to_string(), &0.0, &0.0);
 
         self.status = GameStatus::Fight;
@@ -166,11 +200,11 @@ impl GunScoreApp<'_> {
 
         if self.player.shooting {
             self.player.shooting = false;
-            if self.player.amunition >= 1.0 {
+            if self.player.amunition >= 1 {
                 self.bullets.push(
                     Bullet::new(self.player.pos.x, self.player.pos.y, self.player.direction),
                 );
-                self.player.amunition -= 1.0;
+                self.player.amunition -= 1;
             }
         }
 
@@ -178,7 +212,7 @@ impl GunScoreApp<'_> {
             monster.update(args.dt, *size);
             if monster.tabrakan(&self.player) {
                 // TODO: game over
-                if self.player.life <= 1 {
+                if self.player.life <= 0 {
                     self.status = GameStatus::Lose;
                 } else {
                     self.player.life -= 1;
@@ -191,13 +225,25 @@ impl GunScoreApp<'_> {
             for monster in &mut self.monsters {
                 if bullet.tabrakan(monster) {
                     bullet.ttl = 0.0;
+                    let health = monster.health;
+
                     monster.health -= f64::from(bullet.damage_count);
+                    if monster.health <= 0.0 {
+                        self.player.score += health - (health - f64::from(bullet.damage_count));
+                    }
+
+                    drop(health);
                 }
             }
         }
 
         self.bullets.retain(|bullet| bullet.ttl > 0.0);
         self.monsters.retain(|monster| monster.health > 0.0);
+        
+        if self.monsters.is_empty() {
+            self.status = GameStatus::Win;
+        }
+
         drop(size);
     }
 
@@ -240,14 +286,9 @@ impl GunScoreApp<'_> {
                         }
                     },
                     Key::R => {
-                        if is_press && self.player.amunition <= 0.0 {
-                            self.player.reloading = true;
+                        if is_press && self.player.amunition <= 0 {
                             self.player.shooting = false;
-
-                            for x in 1..10 { // reload effect w/ loop ehe:)
-                                self.player.amunition += f64::from(x);
-                            }
-                            self.player.reloading = false;
+                            self.player.amunition = 100;
                         }
                     }
                     _ => (),
