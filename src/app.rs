@@ -23,7 +23,7 @@ pub struct GunScoreApp<'a> {
     pub window: Window,
     pub player: Player,
     pub monsters: Vec<Monster>,
-    pub status: GameStatus,
+    status: GameStatus,
     pub text_draw: TextDraw<'a>,
 }
 
@@ -32,25 +32,23 @@ impl GunScoreApp<'_> {
         let opengl = OpenGL::V3_2;
         let window_settings = WindowSettings::new("gun-score", [500, 500])
             .graphics_api(opengl);
-        let gl = GlGraphics::new(opengl);
         let glyph = load_cache(include_bytes!("../assets/SF_Atarian_System.ttf"));
-        let text_draw = TextDraw::new(glyph, gl);
-
-        drop(opengl);
+        
         // glyph access on 'TextDraw.cache'
 
         GunScoreApp {
             window: window_settings.build().unwrap(),
-            gl,
+            gl: GlGraphics::new(opengl),
             player: Player::new(&"Tono".to_string(), &0.0, &0.0),
             monsters: Vec::new(),
             status: GameStatus::Fight,
-            text_draw,
+            text_draw: TextDraw::new(glyph),
         }
     }
 
     pub fn render(&mut self, args: &RenderArgs) {
         let colors = Colors::init();
+        let size = &self.get_size();
         
         // player
         let (x, y) = (self.player.pos.x, self.player.pos.y);
@@ -65,8 +63,12 @@ impl GunScoreApp<'_> {
             // check the game status.
             match self.status {
                 GameStatus::Lose => {
-
-                }
+                    self.text_draw.draw_center(&String::from("YOU LOSE!"), &colors.red, &32, &[
+                                               f64::from(size.width),
+                                               f64::from(size.height),
+                    ], &c,gl);
+                },
+                _ => (),
             }
 
             // render player
@@ -77,6 +79,7 @@ impl GunScoreApp<'_> {
                 enemy.render(&c, gl);
             }
         });
+        drop(size);
         drop(colors);
         drop(x);
         drop(y);

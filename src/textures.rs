@@ -30,24 +30,18 @@ pub fn load_font(font_bytes: &'static [u8]) -> Font<'_> {
 }
 
 pub fn load_cache(font_bytes: &'static [u8]) -> GlyphCache<'_> {
-    let font = load_font(font_bytes);
-    let cache = GlyphCache::from_font(font, (), TextureSettings::new());
-
-    drop(font);
-    cache
+    GlyphCache::from_font(load_font(font_bytes), (), TextureSettings::new())
 }
 
 
 pub struct TextDraw<'a> {
     pub cache: GlyphCache<'a>,
-    pub gl: GlGraphics,
 }
 
 impl<'a> TextDraw<'a> {
-    pub fn new(cache: GlyphCache<'a>, gl: GlGraphics) -> Self {
+    pub fn new(cache: GlyphCache<'a>) -> Self {
         TextDraw {
             cache: cache,
-            gl: gl,
         }
     }
 
@@ -58,23 +52,24 @@ impl<'a> TextDraw<'a> {
     // pos = ([0] = x, [1] = y)
     // size = font size
     // ctx = window context
-    pub fn draw(&mut self, text: &String, color: &ColorComps, pos: &[f64; 2], size: &u32, ctx: &Context) {
+    // gl = GlGraphics
+    pub fn draw(&mut self, text: &String, color: &ColorComps, pos: &[f64; 2], size: &u32, ctx: &Context, gl: &mut GlGraphics) {
         let transformer = ctx.transform
             .trans(pos[0], pos[1]); // set the text position.
         Text::new_color(*color, *size)
-            .draw(&text.to_string(), &mut self.cache, &DrawState::default(), transformer, &mut self.gl)
+            .draw(&text.to_string(), &mut self.cache, &DrawState::default(), transformer, gl)
             .unwrap();
 
         drop(transformer);
     }
 
-    pub fn draw_center(&mut self, text: &String, color: &ColorComps, size: &u32, bounds: &[f64; 2], ctx: &Context) {
+    pub fn draw_center(&mut self, text: &String, color: &ColorComps, size: &u32, bounds: &[f64; 2], ctx: &Context, gl: &mut GlGraphics) {
         let half_size = f64::from(*size) / 2.0;
         
         let x = (bounds[0] / 2.0) - ((text.len() as f64) * half_size) / 2.0;
         let y = (bounds[1] / 2.0) - half_size;
 
-        self.draw(text, color, &[x, y], size, ctx);
+        self.draw(text, color, &[x, y], size, ctx, gl);
 
         drop(x);
         drop(y);

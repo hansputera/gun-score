@@ -11,7 +11,7 @@ use piston::window::Size;
 
 use super::GameObject;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum EnemyType {
     Kind,
     Fighter,
@@ -42,7 +42,7 @@ impl Enemy {
             health: get_random_number::<f64>(10.0, 1000.0),
             move_ttl: MOVE_TTL,
             pos: Position::new(x,y),
-            size: ENEMY_RADIUS * 5.0,
+            size: ENEMY_RADIUS * 3.0,
             enemy_type,
             damage_count: if enemy_type == EnemyType::Fighter {
                 drop(enemy_type);
@@ -97,9 +97,9 @@ impl GameObject for Enemy {
         if self.move_ttl <= 0.0 {
             // Randomly move in a random direction.
             let radius = self.radius();
-            self.pos.x += get_random_number::<f64>(0.0, MOVE_RADIUS * 5.0)
+            self.pos.x += get_random_number::<f64>(0.0, MOVE_RADIUS * 2.0)
                 - MOVE_RADIUS;
-            self.pos.y += get_random_number::<f64>(0.0, MOVE_RADIUS * 5.0)
+            self.pos.y += get_random_number::<f64>(0.0, MOVE_RADIUS * 2.0)
                 - MOVE_RADIUS;
 
             restrict_to_bounds(
