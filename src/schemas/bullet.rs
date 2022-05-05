@@ -28,6 +28,7 @@ pub struct Bullet {
     pub ttl: f64,
     pub damage_count: f32,
     pub attacker: Attacker,
+    pub source_direction: Direction,
 }
 
 impl Bullet {
@@ -39,6 +40,12 @@ impl Bullet {
             ttl: BULLET_LIFETIME,
             damage_count: get_random_number::<f32>(5.0, 20.0),
             attacker,
+            source_direction: match direction {
+				Direction::EAST => Direction::WEST,
+				Direction::WEST => Direction::EAST,
+				Direction::NORTH => Direction::SOUTH,
+				Direction::SOUTH => Direction::NORTH,
+			},
         }
     }
 

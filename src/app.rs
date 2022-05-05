@@ -2,7 +2,7 @@ use opengl_graphics::{GlGraphics, OpenGL};
 use glutin_window::GlutinWindow as Window;
 use piston::window::{WindowSettings, Size};
 use piston::input::*;
-use graphics::{clear, Transformed};
+use graphics::{clear};
 
 use crate::colors::{Colors};
 use crate::schemas::player::{Player};
@@ -10,7 +10,7 @@ use crate::schemas::enemy::{Monster, EnemyType};
 use crate::schemas::bullet::{Bullet, Attacker};
 use crate::geom::{Direction, Position};
 use crate::schemas::{GameObject};
-use crate::textures::{load_cache, TextDraw, get_heart};
+use crate::textures::{load_cache, TextDraw};
 
 #[derive(PartialEq)]
 enum GameStatus {
@@ -65,17 +65,6 @@ impl GunScoreApp<'_> {
         let (x, y) = (self.player.pos.x, self.player.pos.y);
         let player = &self.player;
 
-        // heart icon
-        let heart_pos = [
-            f64::from(size.width) / 2.0,
-            (f64::from(size.height) / 2.0) + 20.0,
-        ];
-
-        let heart_icon = get_heart(&Position::new(
-                heart_pos[0],
-                heart_pos[1],
-        ));
-
         // monster/enemy
         let enemies = &self.monsters;
         // bullets
@@ -95,12 +84,10 @@ impl GunScoreApp<'_> {
             self.text_draw.draw(&String::from(format_args!("Score: {}", player.score.floor()).to_string()), &colors.black, &[
                                 20.0, 70.0,
             ], &25, &c, gl);
-
-            // draw heart icon
-            heart_icon.img.draw(&heart_icon.texture, &c.draw_state, c.transform.trans(heart_pos[0], heart_pos[1]), gl);
-            self.text_draw.draw(&String::from(format_args!("{}", player.life).to_string()), &colors.black, &[
-                                heart_pos[0],
-                                heart_pos[1] + 10.0,
+            
+            self.text_draw.draw(&String::from(format_args!("Life: {}", player.life).to_string()), &colors.black, &[
+                                f64::from(size.width) / 2.0,
+								(f64::from(size.height) / 2.0) + 20.0,
             ], &15, &c, gl);
 
             // draw "Need reload ..." text when the player amunition is 0
@@ -157,8 +144,6 @@ impl GunScoreApp<'_> {
             }
         });
 
-        drop(heart_icon);
-        drop(heart_pos);
         drop(size);
         drop(colors);
         drop(x);
@@ -166,7 +151,7 @@ impl GunScoreApp<'_> {
     }
 
     fn reset(&mut self) {
-        self.player = Player::new(&"Tono".to_string(), &0.0, &0.0);
+        self.player = Player::new(&"You".to_string(), &0.0, &0.0);
 
         self.status = GameStatus::Fight;
         self.monsters.clear();
@@ -206,20 +191,20 @@ impl GunScoreApp<'_> {
         }
 
 		// only works in fight mode.
-        if self.status == GameStatus::Fight {
-			if self.player.life < (1 as u8) {
-				self.status = GameStatus::Lose;
-			}
-			
-			if self.player.health < (1.0 as f64) {
+        if self.status == GameStatus::Fight {	
+			if self.player.health < f64::from(1.0) {
 				self.player.life -= 1;
 				self.player.pos = Position::new(0.0, 0.0);
+			}
+			
+			if self.player.life < u8::from(1) {
+				self.status = GameStatus::Lose;
 			}
 			
 			for monster in &mut self.monsters {
 				monster.update(args.dt, *size);
 				if monster.tabrakan(&self.player) {
-					if self.player.life < (1 as u8) {
+					if self.player.life < u8::from(1) {
 						self.status = GameStatus::Lose;
 					} else {
 						self.player.life -= 1;
@@ -229,14 +214,6 @@ impl GunScoreApp<'_> {
 			}
 			
 			let mut enem_bulls: Vec<Bullet> = Vec::new();
-
-			// predict the player direction
-			let bullet_direction = match self.player.direction {
-				Direction::EAST => Direction::WEST,
-				Direction::WEST => Direction::EAST,
-				Direction::NORTH => Direction::SOUTH,
-				Direction::SOUTH => Direction::NORTH,
-			};
 			
 			for bullet in &mut self.bullets {
 				bullet.update(args.dt, *size);
@@ -244,7 +221,7 @@ impl GunScoreApp<'_> {
 					if bullet.tabrakan(monster) && bullet.attacker == Attacker::Player {
 						// if the monster type is a fighter, it will shoot a bullet to player.
 						if monster.enemy_type == EnemyType::Fighter {
-							enem_bulls.push(Bullet::new(monster.pos.x, monster.pos.y, bullet_direction, Attacker::Monster));
+							enem_bulls.push(Bullet::new(monster.pos.x, monster.pos.y, bullet.source_direction, Attacker::Monster));
 						}
 
 						bullet.ttl = 0.0;
@@ -264,8 +241,6 @@ impl GunScoreApp<'_> {
 					}
 				}
 			}
-			
-			drop(bullet_direction);
 
 			self.bullets.append(&mut enem_bulls);
 			drop(enem_bulls);
@@ -276,7 +251,16 @@ impl GunScoreApp<'_> {
 			if self.monsters.is_empty() {
 				self.status = GameStatus::Win;
 			}
-        }
+        } else {
+			// just update the position.
+			for bullet in &mut self.bullets {
+				bullet.update(args.dt, *size);
+			}
+			
+			for monster in &mut self.monsters {
+				monster.update(args.dt, *size);
+			}
+		}
 
         drop(size);
     }
