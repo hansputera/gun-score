@@ -8,5 +8,5 @@ A simple 2d game using [piston.rs](https://piston.rs)
 
 # Previews
 
-![1.png](./screenshoots/1.png)
-![2.png](./screenshoots/2.png)
+![1.png](./screenshots/1.png)
+![2.png](./screenshots/2.png)
