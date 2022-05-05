@@ -209,6 +209,7 @@ impl GunScoreApp<'_> {
 					} else {
 						self.player.life -= 1;
 						self.player.pos = Position::new(0.0, 0.0); // reset the position when the player died.
+						self.player.health = 1000;
 					}
 				}
 			}
